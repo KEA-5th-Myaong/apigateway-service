@@ -1,9 +1,19 @@
 server:
   port: 8000
 
+
+
 spring:
   application:
     name: apigateway-service
+
+  cloud:
+    gateway:
+      routes:
+        - id: member-service
+          uri: lb://MEMBER-SERVICE
+          predicates:
+            - Path=/members/**
 
 eureka:
   client:
@@ -12,3 +22,36 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka
 
+springdoc:
+  swagger-ui:
+    use-root-path: true
+    urls[0]:
+      name: member-service
+      url: /members/v3/api-docs
+#    urls[0]:
+#      name: blog-service
+#      url: /blog-service/v3/api-docs
+#    urls[1]:
+#      name: inquiry-service
+#      url: /inquiry-service/v3/api-docs
+#    urls[2]:
+#      name: interview-service
+#      url: /interview-service/v3/api-docs
+#    urls[4]:
+#      name: member-service
+#      url: /member-service/v3/api-docs
+#    urls[5]:
+#      name: notice-service
+#      url: /notice-service/v3/api-docs
+#    urls[6]:
+#      name: notification-service
+#      url: /notification-service/v3/api-docs
+#    urls[7]:
+#      name: portfolio-service
+#      url: /portfolio-service/v3/api-docs
+#    urls[8]:
+#      name: prejob-service
+#      url: /prejob-service/v3/api-docs
+#    urls[9]:
+#      name: ps-service
+#      url: /ps-service/v3/api-docs
