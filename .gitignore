@@ -38,3 +38,6 @@ out/
 
 # mac os
 .DS_Store
+
+# 설정 파일
+*.yml
