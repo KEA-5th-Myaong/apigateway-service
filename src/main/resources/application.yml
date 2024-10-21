@@ -1,14 +1,22 @@
 server:
   port: 8000
 
-
-
 spring:
   application:
     name: apigateway-service
 
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+            allowCredentials: true
       routes:
         # 블로그 서비스
         - id: blog-service
@@ -46,8 +54,8 @@ spring:
           predicates:
             - Path=/portfolios/**
         # 관심 직군 서비스
-        - id: prejob-service
-          uri: lb://PREJOB-SERVICE
+        - id: prejobs-service
+          uri: lb://PREJOBS-SERVICE
           predicates:
             - Path=/pre-jobs/**
         # 자기소개서 서비스
