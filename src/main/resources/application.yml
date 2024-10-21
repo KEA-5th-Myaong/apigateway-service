@@ -96,7 +96,7 @@ springdoc:
       name: portfolio-service
       url: /portfolios/v3/api-docs
     urls[7]:
-      name: prejob-service
+      name: prejobs-service
       url: /pre-jobs/v3/api-docs
     urls[8]:
       name: ps-service
