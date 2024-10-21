@@ -19,6 +19,12 @@ configurations {
 	}
 }
 
+bootJar{
+	archivesBaseName = 'popolog-apigateway-service'
+	archiveFileName = 'popolog-apigateway-service.jar'
+	archiveVersion = "0.0.0"
+}
+
 repositories {
 	mavenCentral()
 }
