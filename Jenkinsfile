@@ -64,20 +64,6 @@ pipeline {
             }
         }
 
-        stage('Image Delete on Kubernetes') {
-            steps {
-                echo 'Removing Previous Docker Image on Kubernetes'
-                script {
-                    def previousBuildId = "${env.BUILD_ID.toInteger() - 1}"
-                    sshagent (credentials: ['kube-master-ssh']) {
-                        sh """
-                        ssh -o StrictHostKeyChecking=no ${kubeMasterNodeServerUsername}@${kubeMasterNodeServerIp} 'docker rmi ${env.fullImageName}:${previousBuildId} || true'
-                        """
-                    }
-                }
-            }
-        }
-
         stage('Image Delete on Jenkins VM') {
             steps {
                 echo 'Removing Previous Docker Image on Jenkins VM'
