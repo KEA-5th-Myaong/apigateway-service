@@ -11,12 +11,11 @@ pipeline {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'docker-hub-username', variable: 'DOCKER_HUB_USERNAME'),
-                                     string(credentialsId: 'apigateway-image-name', variable: 'APIGATEWAY_IMAGE_NAME'),
                                      string(credentialsId: 'kube-master-username', variable: 'KUBE_MASTER_USERNAME'),
                                      string(credentialsId: 'kube-master-ip', variable: 'KUBE_MASTER_IP')]) { // YAML 파일 가져오기 제외
                         // 환경 변수 설정
                         env.dockerHubUsername = DOCKER_HUB_USERNAME
-                        env.apigatewayImageName = APIGATEWAY_IMAGE_NAME
+                        env.apigatewayImageName = "pplog-apigateway-service"
                         env.kubeMasterNodeServerUsername = KUBE_MASTER_USERNAME
                         env.kubeMasterNodeServerIp = KUBE_MASTER_IP
                         env.fullImageName = "${env.dockerHubUsername}/${env.apigatewayImageName}" // fullImageName 설정
