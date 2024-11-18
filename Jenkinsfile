@@ -47,24 +47,25 @@ pipeline {
             steps {
                 echo 'Building and Pushing Docker Image'
                 script {
-                    // 1. 원격 도커 허브에 있는 도커 이미지(latest로 붙어있는 도커 이미지)의 태그를 BUILD_ID-1로 변경 후 로컬에서는 이미지 삭제
                     def previousBuildId = "${env.BUILD_ID.toInteger() - 1}"
-                    
-                    // 로컬에 존재하는 latest 태그가 붙은 도커 이미지 삭제
+
+                    // 1. 로컬에 존재하는 latest 태그가 붙은 도커 이미지의 태그를 previousBuildId로 변경
                     sh """
-                    docker rmi ${env.fullImageName}:latest || true
+                    docker tag ${env.fullImageName}:latest ${env.fullImageName}:${previousBuildId} || true
                     """
 
                     docker.withRegistry('', registryCredential) {
-                        sh """
-                        docker pull ${env.fullImageName}:latest || true
-                        docker tag ${env.fullImageName}:latest ${env.fullImageName}:${previousBuildId} || true
-                        docker push ${env.fullImageName}:${previousBuildId} || true
-                        docker rmi ${env.fullImageName}:${previousBuildId} || true
-                        """
+                        // 2. 원격 도커 허브에서 latest 태그의 이미지 삭제
+                        sh "docker rmi ${env.fullImageName}:latest || true"
+
+                        // 3. 1번에서 태그가 previousBuildId로 변경된 도커 이미지를 원격 도커 허브에 푸시
+                        sh "docker push ${env.fullImageName}:${previousBuildId} || true"
                     }
 
-                    // 2. 새로 생성되는 도커 이미지의 태그를 latest로 설정하고 푸시
+                    // 4. 로컬에서 previousBuildId 태그에 해당하는 이미지 삭제
+                    sh "docker rmi ${env.fullImageName}:${previousBuildId} || true"
+
+                    // 5. 새로 생성되는 도커 이미지의 태그를 latest로 설정하고 푸시
                     dockerImage = docker.build("${env.fullImageName}:latest")
                     docker.withRegistry('', registryCredential) {
                         dockerImage.push()
@@ -72,7 +73,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Deploy to Kubernetes') {
             steps {
                 echo 'Deploying to Kubernetes'
