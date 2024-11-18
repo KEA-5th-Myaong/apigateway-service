@@ -42,3 +42,5 @@ out/
 # 설정 파일
 *.yml
 
+# bootstrap.yml 파일은 ignore 하지 않음
+!bootstrap.yml
