@@ -43,34 +43,33 @@ pipeline {
             }
         }
 
-        stage('Build Docker') {
+        stage('Build & Push Docker Image') {
             steps {
-                echo 'Building Docker Image'
+                echo 'Building and Pushing Docker Image'
                 script {
-                    dockerImage = docker.build("${env.fullImageName}:${env.BUILD_ID}")
-                }
-            }
-        }
+                    // 1. 로컬에 존재하는 latest 태그가 붙은 도커 이미지 삭제
+                    sh """
+                    docker rmi ${env.fullImageName}:latest || true
+                    """
 
-        stage('Push Docker') {
-            steps {
-                echo 'Pushing Docker Image'
-                script {
+                    // 2. 원격 도커 허브에 있는 도커 이미지(latest로 붙어있는 도커 이미지)의 태그를 BUILD_ID-1로 변경
+                    def previousBuildId = "${env.BUILD_ID.toInteger() - 1}"
+
+                    // Docker Registry에 로그인
+                    docker.withRegistry('', registryCredential) {
+                        // 원격 레포지토리에서 latest 이미지 풀
+                        sh """
+                        docker pull ${env.fullImageName}:latest || true
+                        docker tag ${env.fullImageName}:latest ${env.fullImageName}:${previousBuildId} || true
+                        docker push ${env.fullImageName}:${previousBuildId} || true
+                        """
+                    }
+
+                    // 3. 새로 생성되는 도커 이미지의 태그를 latest로 설정하고 푸시
+                    dockerImage = docker.build("${env.fullImageName}:latest")
                     docker.withRegistry('', registryCredential) {
                         dockerImage.push()
                     }
-                }
-            }
-        }
-
-        stage('Image Delete on Jenkins VM') {
-            steps {
-                echo 'Removing Previous Docker Image on Jenkins VM'
-                script {
-                    def previousBuildId = "${env.BUILD_ID.toInteger() - 1}"
-                    sh """
-                    docker rmi ${env.fullImageName}:${previousBuildId} || true
-                    """
                 }
             }
         }
