@@ -43,29 +43,23 @@ pipeline {
             }
         }
 
-        stage('Build & Push Docker Image') {
+         stage('Build & Push Docker Image') {
             steps {
                 echo 'Building and Pushing Docker Image'
                 script {
-                    // 1. 로컬에 존재하는 latest 태그가 붙은 도커 이미지 삭제
-                    sh """
-                    docker rmi ${env.fullImageName}:latest || true
-                    """
-
-                    // 2. 원격 도커 허브에 있는 도커 이미지(latest로 붙어있는 도커 이미지)의 태그를 BUILD_ID-1로 변경
+                    // 1. 원격 도커 허브에 있는 도커 이미지(latest로 붙어있는 도커 이미지)의 태그를 BUILD_ID-1로 변경 후 로컬에서는 이미지 삭제
                     def previousBuildId = "${env.BUILD_ID.toInteger() - 1}"
 
-                    // Docker Registry에 로그인
                     docker.withRegistry('', registryCredential) {
-                        // 원격 레포지토리에서 latest 이미지 풀
                         sh """
                         docker pull ${env.fullImageName}:latest || true
                         docker tag ${env.fullImageName}:latest ${env.fullImageName}:${previousBuildId} || true
                         docker push ${env.fullImageName}:${previousBuildId} || true
+                        docker rmi ${env.fullImageName}:${previousBuildId} || true
                         """
                     }
 
-                    // 3. 새로 생성되는 도커 이미지의 태그를 latest로 설정하고 푸시
+                    // 2. 새로 생성되는 도커 이미지의 태그를 latest로 설정하고 푸시
                     dockerImage = docker.build("${env.fullImageName}:latest")
                     docker.withRegistry('', registryCredential) {
                         dockerImage.push()
