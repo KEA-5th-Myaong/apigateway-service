@@ -20,7 +20,7 @@ public class JwtUtil {
 
     // application.yml에 있는 평문 secret key를 가져와 초기화하였다.
     // 여기서는 HS256으로 진행했다.
-    public JwtUtil(@Value("${jwt.secret_key}") String secret) {
+    public JwtUtil(@Value("${jwt.secret-key}") String secret) {
         this.secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), SignatureAlgorithm.HS256.getJcaName());
     }
 
