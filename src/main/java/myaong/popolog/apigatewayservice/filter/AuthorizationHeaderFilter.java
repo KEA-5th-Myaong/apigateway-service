@@ -1,15 +1,19 @@
 package myaong.popolog.apigatewayservice.filter;
 
 import lombok.extern.slf4j.Slf4j;
+import myaong.popolog.apigatewayservice.common.ApiCode;
+import myaong.popolog.apigatewayservice.common.ApiResponse;
+import myaong.popolog.apigatewayservice.common.Constants;
 import myaong.popolog.apigatewayservice.jwt.JwtUtil;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import static myaong.popolog.apigatewayservice.common.Constants.*;
+
 
 @Component
 @Slf4j
@@ -28,13 +32,13 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
-            // access token 추출
             ServerHttpRequest request = exchange.getRequest();
-            String accessToken = jwtUtil.getTokenFromHeader(request, "Authorization");
+            String accessToken = jwtUtil.getTokenFromHeader(request, AUTHORIZATION_HEADER);
+            String refreshToken = jwtUtil.getTokenFromCookie(request, REFRESH_KEY_NAME);
             log.info("Access token: {}", accessToken);
 
-            // JWT 검증
-            if (jwtUtil.validateToken(accessToken)) {
+            // access token과 refresh token이 유효할 때
+            if (jwtUtil.validateToken(accessToken) && !jwtUtil.isExpired(accessToken)) {
                 // 검증 성공 시 로직
                 Long memberId = jwtUtil.getMemberId(accessToken);
                 request.mutate().header("memberId", String.valueOf(memberId));
@@ -42,20 +46,15 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
                 return chain.filter(exchange);
             }
 
+            if (jwtUtil.isExpired(accessToken) && jwtUtil.validateToken(accessToken)) {
+                if (jwtUtil.validateToken(refreshToken) && !jwtUtil.isExpired(refreshToken)) {
+                    jwtUtil.redirectReissueURI(exchange.getResponse(), refreshToken);
+                    return Mono.empty(); // 리다이렉트 후 체인 진행을 멈춤
+                }
+            }
+
             // 인증 실패 시 401 에러 반환
-            return onError(exchange, "AccessToken이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
+            return ApiResponse.responseOnFilter(exchange.getResponse(), HttpStatus.UNAUTHORIZED, ApiCode.INVALID_TOKEN.getCode(), ApiCode.INVALID_TOKEN.getMessage(), false);
         };
-    }
-
-    // 오류 처리 메서드
-    private Mono<Void> onError(ServerWebExchange exchange, String message, HttpStatus httpStatus) {
-        exchange.getResponse().setStatusCode(httpStatus);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-        // JSON 응답 생성
-        String jsonResponse = String.format("{\"message\":\"%s\",\"status\":%d}", message, httpStatus.value());
-
-        // 응답 작성
-        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(jsonResponse.getBytes())));
     }
 }
