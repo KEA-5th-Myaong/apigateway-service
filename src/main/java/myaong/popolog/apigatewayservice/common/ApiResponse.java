@@ -54,14 +54,10 @@ public class ApiResponse<T> {
 		response.setStatusCode(httpStatus);
 		response.getHeaders().setContentType(MediaType.APPLICATION_JSON); // JSON 콘텐츠 타입 설정
 
-		// 에러 메시지 객체 생성
-		Map<String, Object> responseMap = new HashMap<>();
-		responseMap.put("code", code);
-		responseMap.put("message", message);
-		responseMap.put("success", success); // 실패 시 false 설정
+		ApiResponse responseMap = new ApiResponse<>(success, code, message, null);
 
-		// ObjectMapper를 사용하여 Map을 JSON으로 변환
 		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		String jsonResponse;
 
 		try {
