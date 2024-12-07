@@ -80,6 +80,8 @@ pipeline {
                 sshagent (credentials: ['bastion-ssh']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ${bastionUsername}@${bastionIp} '
+                        # Setting kubeconfig environment
+                        export KUBECONFIG=~/.kube/config
                         # Change directory to where the manifests are located
                         cd ~/manifest
 
