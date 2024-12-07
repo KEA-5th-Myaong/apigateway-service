@@ -11,13 +11,13 @@ pipeline {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'docker-hub-username', variable: 'DOCKER_HUB_USERNAME'),
-                                     string(credentialsId: 'kube-master-username', variable: 'KUBE_MASTER_USERNAME'),
-                                     string(credentialsId: 'kube-master-ip', variable: 'KUBE_MASTER_IP')]) { // YAML 파일 가져오기 제외
+                                     string(credentialsId: 'bastion-username', variable: 'BASTION_USERNAME'),
+                                     string(credentialsId: 'bastion-ip', variable: 'BASTION_IP')]) { // YAML 파일 가져오기 제외
                         // 환경 변수 설정
                         env.dockerHubUsername = DOCKER_HUB_USERNAME
-                        env.apigatewayImageName = "pplog-apigateway-service"
-                        env.kubeMasterNodeServerUsername = KUBE_MASTER_USERNAME
-                        env.kubeMasterNodeServerIp = KUBE_MASTER_IP
+                        env.apigatewayImageName = "popolog-apigateway-service"
+                        env.bastionUsername = BASTION_USERNAME
+                        env.bastionIp = BASTION_IP
                         env.fullImageName = "${env.dockerHubUsername}/${env.apigatewayImageName}" // fullImageName 설정
                     }
                 }
@@ -77,14 +77,13 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 echo 'Deploying to Kubernetes'
-                sshagent (credentials: ['kube-master-ssh']) {
+                sshagent (credentials: ['bastion-ssh']) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ${kubeMasterNodeServerUsername}@${kubeMasterNodeServerIp} '
+                    ssh -o StrictHostKeyChecking=no ${bastionUsername}@${bastionIp} '
                         # Change directory to where the manifests are located
-                        cd ~/gitops/apps/apigateway/ &&
+                        cd ~/manifest
 
                         # Apply the ConfigMap and Deployment YAML files
-                        kubectl apply -f apigateway-configmap.yaml &&
                         kubectl apply -f apigateway-service.yaml
                     '
                     """
@@ -95,12 +94,12 @@ pipeline {
 
     post {
         success {
-            slackSend(channel: '#jenkins', color: '#00FF00', message: """:white_check_mark: 성공 : ${env.JOB_NAME} [${env.BUILD_NUMBER}] 확인 : (${env.BUILD_URL})""")
+            slackSend(channel: '#jenkins', color: '#00FF00', message: """:white_check_mark: Prod 서버 CI/CD 파이프라인 성공 : ${env.JOB_NAME} [${env.BUILD_NUMBER}] 확인 : (${env.BUILD_URL})""")
         }
 
 
         failure {
-            slackSend(channel: '#jenkins', color: '#00FF00', message: """:octagonal_sign: 실패 : ${env.JOB_NAME} [${env.BUILD_NUMBER}] 확인 : (${env.BUILD_URL})""")
+            slackSend(channel: '#jenkins', color: '#00FF00', message: """:octagonal_sign: Prod 서버 CI/CD 파이프라인 실패 : ${env.JOB_NAME} [${env.BUILD_NUMBER}] 확인 : (${env.BUILD_URL})""")
         }
     }
 }
