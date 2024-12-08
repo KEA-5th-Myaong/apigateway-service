@@ -83,10 +83,11 @@ pipeline {
                         # Setting kubeconfig environment
                         export KUBECONFIG=~/.kube/config
                         # Change directory to where the manifests are located
-                        cd ~/manifest
+                        cd ~/manifest/apigateway
 
                         # Apply the ConfigMap and Deployment YAML files
-                        kubectl apply -f apigateway-service.yaml
+                        kubectl apply -f apigw-configmap.yaml
+                        kubectl apply -f apigw-service.yaml
                     '
                     """
                 }
