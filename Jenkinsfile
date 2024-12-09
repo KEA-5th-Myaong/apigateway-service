@@ -12,7 +12,7 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'docker-hub-username', variable: 'DOCKER_HUB_USERNAME'),
                                      string(credentialsId: 'bastion-username', variable: 'BASTION_USERNAME'),
-                                     string(credentialsId: 'bastion-ip', variable: 'BASTION_IP')]) { // YAML 파일 가져오기 제외
+                                     string(credentialsId: 'bastion-ip', variable: 'BASTION_IP')]) {
                         // 환경 변수 설정
                         env.dockerHubUsername = DOCKER_HUB_USERNAME
                         env.apigatewayImageName = "popolog-apigateway-service"
@@ -50,23 +50,30 @@ pipeline {
                     def previousBuildId = "${env.BUILD_ID.toInteger() - 1}"
                     def newBuildId = "${env.BUILD_ID.toInteger()}"
 
+                    // 새로운 이미지 빌드 및 푸시
                     dockerImage = docker.build("${env.fullImageName}:${newBuildId}")
                     docker.withRegistry('', registryCredential) {
                         dockerImage.push()
                     }
+
+                    // 이전 빌드 ID 태그 이미지 삭제
+                    sh "docker rmi ${env.fullImageName}:${previousBuildId} || true"
                 }
             }
         }
 
         stage('Connect Bastion') {
             steps {
-                sshagent (credentials: ['bastion-ssh']) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no ${bastionUsername}@${bastionIp} '
-                        # Pull the Docker image
-                        docker pull ${env.fullImageName}:${newBuildId}
-                    '
-                    """
+                script {
+                    def newBuildId = "${env.BUILD_ID.toInteger()}" 
+                    sshagent (credentials: ['bastion-ssh']) {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no ${bastionUsername}@${bastionIp} '
+                            # Pull the Docker image
+                            docker pull ${env.fullImageName}:${newBuildId}
+                        '
+                        """
+                    }
                 }
             }
         }
@@ -78,9 +85,8 @@ pipeline {
             slackSend(channel: '#jenkins', color: '#00FF00', message: """:white_check_mark: Prod 서버 CI/CD 파이프라인 성공 : ${env.JOB_NAME} [${env.BUILD_NUMBER}] 확인 : (${env.BUILD_URL})""")
         }
 
-
         failure {
-            slackSend(channel: '#jenkins', color: '#00FF00', message: """:octagonal_sign: Prod 서버 CI/CD 파이프라인 실패 : ${env.JOB_NAME} [${env.BUILD_NUMBER}] 확인 : (${env.BUILD_URL})""")
+            slackSend(channel: '#jenkins', color: '#FF0000', message: """:octagonal_sign: Prod 서버 CI/CD 파이프라인 실패 : ${env.JOB_NAME} [${env.BUILD_NUMBER}] 확인 : (${env.BUILD_URL})""")
         }
     }
 }
