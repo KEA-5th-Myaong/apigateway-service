@@ -58,6 +58,19 @@ pipeline {
             }
         }
 
+        stage('Connect Bastion') {
+            steps {
+                sshagent (credentials: ['bastion-ssh']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ${bastionUsername}@${bastionIp} '
+                        # Pull the Docker image
+                        docker pull ${env.fullImageName}:${newBuildId}
+                    '
+                    """
+                }
+            }
+        }
+
     }
 
     post {
