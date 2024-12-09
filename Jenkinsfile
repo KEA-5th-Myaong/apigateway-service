@@ -48,51 +48,16 @@ pipeline {
                 echo 'Building and Pushing Docker Image'
                 script {
                     def previousBuildId = "${env.BUILD_ID.toInteger() - 1}"
+                    def newBuildId = "${env.BUILD_ID.toInteger()}"
 
-                    // 1. 로컬에 존재하는 latest 태그가 붙은 도커 이미지의 태그를 previousBuildId로 변경
-                    sh """
-                    docker tag ${env.fullImageName}:latest ${env.fullImageName}:${previousBuildId} || true
-                    """
-
-                    docker.withRegistry('', registryCredential) {
-                        // 2. 원격 도커 허브에서 latest 태그의 이미지 삭제
-                        sh "docker rmi ${env.fullImageName}:latest || true"
-
-                        // 3. 1번에서 태그가 previousBuildId로 변경된 도커 이미지를 원격 도커 허브에 푸시
-                        sh "docker push ${env.fullImageName}:${previousBuildId} || true"
-                    }
-
-                    // 4. 로컬에서 previousBuildId 태그에 해당하는 이미지 삭제
-                    sh "docker rmi ${env.fullImageName}:${previousBuildId} || true"
-
-                    // 5. 새로 생성되는 도커 이미지의 태그를 latest로 설정하고 푸시
-                    dockerImage = docker.build("${env.fullImageName}:latest")
+                    dockerImage = docker.build("${env.fullImageName}:${newBuildId}")
                     docker.withRegistry('', registryCredential) {
                         dockerImage.push()
                     }
                 }
             }
         }
-        
-        stage('Deploy to Kubernetes') {
-            steps {
-                echo 'Deploying to Kubernetes'
-                sshagent (credentials: ['bastion-ssh']) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no ${bastionUsername}@${bastionIp} '
-                        # Setting kubeconfig environment
-                        export KUBECONFIG=~/.kube/config
-                        # Change directory to where the manifests are located
-                        cd ~/manifest/apigateway
 
-                        # Apply the ConfigMap and Deployment YAML files
-                        kubectl apply -f apigw-configmap.yaml
-                        kubectl apply -f apigw-service.yaml
-                    '
-                    """
-                }
-            }
-        }
     }
 
     post {
