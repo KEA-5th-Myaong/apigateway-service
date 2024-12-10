@@ -15,10 +15,10 @@ pipeline {
                                      string(credentialsId: 'bastion-ip', variable: 'BASTION_IP')]) {
                         // 환경 변수 설정
                         env.dockerHubUsername = DOCKER_HUB_USERNAME
-                        env.apigatewayImageName = "popolog-apigateway-service"
+                        env.imageName = "popolog-apigateway-service"
                         env.bastionUsername = BASTION_USERNAME
                         env.bastionIp = BASTION_IP
-                        env.fullImageName = "${env.dockerHubUsername}/${env.apigatewayImageName}" // fullImageName 설정
+                        env.fullImageName = "${env.dockerHubUsername}/${env.imageName}" // fullImageName 설정
                     }
                 }
             }
