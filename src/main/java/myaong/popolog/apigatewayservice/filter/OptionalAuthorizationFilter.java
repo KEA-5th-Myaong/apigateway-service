@@ -49,7 +49,8 @@ public class OptionalAuthorizationFilter extends AbstractGatewayFilterFactory<Op
 
             // access 토큰 만료시
             if (jwtUtil.isExpired(accessToken)) {
-                if (jwtUtil.validateToken(refreshToken) && !jwtUtil.isExpired(refreshToken)) {
+                // 임시로 refresh 토큰 만료 검사 x
+                if (jwtUtil.validateToken(refreshToken)) {
                     jwtUtil.redirectReissueURI(exchange.getResponse(), refreshToken);
                     return Mono.empty(); // 리다이렉트 후 체인 진행을 멈춤
                 }
