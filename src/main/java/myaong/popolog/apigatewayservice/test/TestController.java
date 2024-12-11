@@ -22,13 +22,11 @@ public class TestController {
         String mainPageUri = env.getProperty("redirect-url.main");
         String loginUri = env.getProperty("redirect-url.login");
         String profileFormUri = env.getProperty("redirect-url.profile-form");
-        String kakaoRedirectUri = env.getProperty("${spring.security.oauth2.client.registration.kakao.redirect-uri}");
 
         log.info("jwt.secret-key: {}", jwtSecret);
         log.info("redirect-url.reissue: {}", reissueUri);
         log.info("redirect-url.main: {}", mainPageUri);
         log.info("redirect-url.login: {}", loginUri);
         log.info("redirect-url.profile-form: {}", profileFormUri);
-        log.info("spring.security.oauth2.client.registration.kakao.redirect-uri: {}", kakaoRedirectUri);
     }
 }
