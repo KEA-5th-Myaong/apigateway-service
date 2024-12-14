@@ -74,21 +74,6 @@ pipeline {
             }
         }
 
-        stage('Connect Bastion') {
-            steps {
-                script {
-                    def newBuildId = "${env.BUILD_ID.toInteger()}"
-                    sshagent (credentials: ['bastion-ssh']) {
-                        sh """
-                        ssh -o StrictHostKeyChecking=no ${bastionUsername}@${bastionIp} '
-                            kubectl rollout restart deployment apigateway-service -n popolog
-                        '
-                        """
-                    }
-                }
-            }
-        }
-
     }
 
     post {
