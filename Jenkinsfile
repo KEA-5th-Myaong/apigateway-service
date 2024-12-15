@@ -62,7 +62,7 @@ pipeline {
                    docker.withRegistry('', registryCredential) {
                        sh "docker push ${env.fullImageName}:${previousBuildId} || true"
                    }
-       
+
                    // 4. 로컬에서 previousBuildId 태그에 해당하는 이미지 삭제
                    sh "docker rmi ${env.fullImageName}:${previousBuildId} || true"
 
